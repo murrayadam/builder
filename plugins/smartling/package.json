@@ -20,10 +20,10 @@
   "scripts": {
     "lint": "tslint  --project tsconfig.json -t codeFrame 'src/**/*.ts' 'test/**/*.ts'",
     "prebuild": "rimraf dist",
-    "build": "rollup -c rollup.config.ts",
+    "build": "rollup -c rollup.config.js",
     "release:patch": "npm run build && npm version patch --no-git-tag-version && npm publish",
     "release:dev": "npm run build && npm version prerelease --no-git-tag-version && npm publish --tag dev",
-    "start": "SERVE=true rollup -c rollup.config.ts -w",
+    "start": "SERVE=true rollup -c rollup.config.js -w",
     "test": "jest --coverage",
     "test:watch": "jest --coverage --watch",
     "test:prod": "npm run lint && npm run test -- --no-cache"
@@ -125,7 +125,7 @@
     "typescript": "^3.0.3"
   },
   "dependencies": {
-    "@builder.io/commerce-plugin-tools": "^0.3.0",
+    "@builder.io/plugin-tools": "^0.0.7",
     "@builder.io/utils": "^1.1.23",
     "fast-json-stable-stringify": "^2.1.0",
     "lodash": "^4.17.21",

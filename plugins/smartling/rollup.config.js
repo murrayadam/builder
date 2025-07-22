@@ -1,16 +1,16 @@
-import replace from 'rollup-plugin-replace';
-import serve from 'rollup-plugin-serve';
-import esbuild from 'rollup-plugin-esbuild';
-import { nodeResolve } from '@rollup/plugin-node-resolve';
-import common from '@rollup/plugin-commonjs';
-import json from '@rollup/plugin-json';
+const replace = require('rollup-plugin-replace');
+const serve = require('rollup-plugin-serve');
+const esbuild = require('rollup-plugin-esbuild');
+const { nodeResolve } = require('@rollup/plugin-node-resolve');
+const common = require('@rollup/plugin-commonjs');
+const json = require('@rollup/plugin-json');
 const SERVE = process.env.SERVE === 'true';
 
 const pkg = require('./package.json');
 
 const libraryName = 'plugin';
 
-export default {
+module.exports = {
   input: `src/${libraryName}.tsx`,
   // Important! We need to have shared references to 'react' and '@builder.io/sdk'
   // for builder plugins to run properly
@@ -32,6 +32,12 @@ export default {
   output: [{ file: pkg.unpkg, format: 'system', sourcemap: true }],
   watch: {
     include: 'src/**',
+    exclude: ['node_modules/**', 'dist/**'],
+    clearScreen: false,
+    chokidar: {
+      usePolling: true,
+      interval: 1000
+    }
   },
   plugins: [
     replace({

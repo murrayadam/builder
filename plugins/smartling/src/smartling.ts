@@ -13,6 +13,7 @@ export type Project = {
 
 export class SmartlingApi {
          private privateKey?: string;
+         private projectId?: string;
          loaded?: Promise<void>;
          resolveLoaded?: () => void;
          // TODO: basic cache
@@ -21,9 +22,10 @@ export class SmartlingApi {
              ...search,
              pluginId: pkg.name,
              apiKey: appState.user.apiKey,
+             projectId: this.projectId || '',
            });
 
-           const baseUrl = new URL(`${appState.config.apiRoot()}/api/v1/smartling/${path}`);
+           const baseUrl = new URL(`${appState.config.apiRoot()}/api/v2/smartling/${path}`);
            baseUrl.search = params.toString();
            return baseUrl.toString();
          }
@@ -39,7 +41,9 @@ export class SmartlingApi {
 
          async init() {
            this.privateKey = await appState.globalState.getPluginPrivateKey(pkg.name);
-           if (this.privateKey) {
+           const pluginSettings = appState.user.organization?.value?.settings?.plugins?.get(pkg.name);
+           this.projectId = pluginSettings?.get('projectId');
+           if (this.privateKey && this.projectId) {
              this.resolveLoaded!();
            }
          }
@@ -58,53 +62,72 @@ export class SmartlingApi {
              },
            }).then(res => res.json());
          }
-         // todo separate types
-         getProject(id: string): Promise<{ project: Project }> {
-           return this.request(`project/${id}`);
+         // Get current project details
+         getProject(): Promise<{ project: Project }> {
+           return this.request('project/details');
          }
 
-         getAllProjects(): Promise<{ results: Project[] }> {
-           return this.request('project/all');
+         getJob(id: string): Promise<{ job: any }> {
+           return this.request('job', { method: 'GET' }, { id });
          }
 
-         getJob(id: string, projectId: string): Promise<{ job: any }> {
-           return this.request('job', { method: 'GET' }, { id, projectId });
+         // Get all active Smartling jobs for the configured project
+         getSmartlingJobs(): Promise<{ jobs: any[] }> {
+           return this.request('jobs/status/all', { method: 'GET' }, { includeCompleted: false });
          }
 
-         createLocalJob(name: string, content: any[]): Promise<any> {
-           const translationModel = getTranslationModel();
-           return appState.createContent(translationModel.name, {
-             name,
-             meta: {
-               createdBy: pkg.name,
-             },
-             data: {
-               entries: content.map(getContentReference),
-             },
+         // Get all jobs (including completed) for job management dashboard
+         getAllJobs(includeCompleted: boolean = true): Promise<{ jobs: any[]; summary: any }> {
+           return this.request('jobs/status/all', { method: 'GET' }, { includeCompleted });
+         }
+
+         // Get detailed status for a specific job
+         getJobDetails(jobUid: string): Promise<{ job: any; content: any[] }> {
+           return this.request(`jobs/${jobUid}/status/detailed`, { method: 'GET' });
+         }
+
+         // Get job activity and timeline
+         getJobActivity(jobUid: string): Promise<{ job: any; activityLog: any[] }> {
+           return this.request(`jobs/${jobUid}/activity`, { method: 'GET' });
+         }
+
+         // Refresh job status manually
+         refreshJobStatus(jobUids: string[]): Promise<{ updates: any[] }> {
+           return this.request('jobs/status/refresh', {
+             method: 'POST',
+             body: JSON.stringify({ jobUids }),
            });
          }
-         async updateLocalJob(jobId: string, content: any[]) {
-           const latestDraft = await appState.getLatestDraft(jobId);
-           const draft = {
-             ...latestDraft,
-             data: {
-               ...latestDraft.data,
-               entries: [
-                 ...(latestDraft.data.entries || []),
-                 ...content.map(c => getContentReference(c)),
-               ],
-             },
-           };
-           appState.updateLatestDraft(draft);
+
+         // Create a new Smartling job directly
+         createSmartlingJob(options: {
+           name: string;
+           description?: string;
+           contentEntries: any[];
+           targetLocales: string[];
+         }): Promise<{ jobId: string; job: any }> {
+           return this.request('batch/create', {
+             method: 'POST',
+             body: JSON.stringify(options),
+           });
          }
 
-         applyTranslation(id: string, model: string) {
-           return this.request('apply-translation', {
+         // Add content to existing Smartling job
+         addToSmartlingJob(options: {
+           jobUid: string;
+           contentEntries: any[];
+         }): Promise<{ success: boolean }> {
+           return this.request('jobs/add-content', {
              method: 'POST',
-             body: JSON.stringify({
-               id,
-               model,
-             }),
+             body: JSON.stringify(options),
+           });
+         }
+
+
+         // Apply translations from a Smartling job
+         applyTranslation(jobUid: string) {
+           return this.request(`jobs/${jobUid}/apply-translations`, {
+             method: 'POST',
            });
          }
 
@@ -119,7 +142,7 @@ export class SmartlingApi {
            translationJobId: string;
            translationModel: string;
          }) {
-           return this.request('remove-content-from-job', {
+           return this.request('jobs/remove-content', {
              method: 'POST',
              body: JSON.stringify({
                contentId,
@@ -137,7 +160,7 @@ export class SmartlingApi {
            contentId: string;
            contentModel: string;
          }) {
-           return this.request('update-translation-file', {
+           return this.request('jobs/update-file', {
              method: 'POST',
              body: JSON.stringify(options),
            });
