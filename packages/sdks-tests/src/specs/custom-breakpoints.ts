@@ -240,3 +240,53 @@ const getResetContent = () => {
 };
 
 export const CONTENT_RESET = getResetContent();
+
+// Test content with larger breakpoints (xlarge and xxlarge)
+export const CONTENT_WITH_LARGER_BREAKPOINTS = {
+  ...fastClone(CONTENT),
+  meta: {
+    ...CONTENT.meta,
+    breakpoints: {
+      medium: 800,
+      small: 500,
+      xsmall: 320,
+      xlarge: 1600,
+      xxlarge: 2400,
+    },
+  },
+  data: {
+    ...CONTENT.data,
+    blocks: [
+      {
+        '@type': '@builder.io/sdk:Element',
+        '@version': 2,
+        id: 'builder-larger-breakpoints-test',
+        component: {
+          name: 'Text',
+          options: { text: '<p>Testing larger breakpoints - Desktop XL and XXL</p>' },
+        },
+        responsiveStyles: {
+          large: {
+            display: 'flex',
+            flexDirection: 'column',
+            position: 'relative',
+            flexShrink: '0',
+            boxSizing: 'border-box',
+            marginTop: '20px',
+            lineHeight: 'normal',
+            height: 'auto',
+            fontSize: '16px',
+          },
+          xlarge: {
+            fontSize: '18px',
+            color: 'rgba(255, 165, 0, 1)', // Orange for xlarge
+          },
+          xxlarge: {
+            fontSize: '20px',
+            color: 'rgba(128, 0, 128, 1)', // Purple for xxlarge
+          },
+        },
+      },
+    ],
+  },
+} as const;

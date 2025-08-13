@@ -6,6 +6,8 @@ export interface Breakpoints {
   xsmall?: number;
   small: number;
   medium: number;
+  xlarge?: number;
+  xxlarge?: number;
 }
 export interface BuilderContentVariation {
   data?: {

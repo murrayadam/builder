@@ -1,5 +1,5 @@
 import { fastClone } from '../functions/fast-clone.js';
-export type SizeName = 'large' | 'medium' | 'small' | 'xsmall';
+export type SizeName = 'large' | 'medium' | 'small' | 'xsmall' | 'xlarge' | 'xxlarge';
 
 interface Size {
   min: number;
@@ -28,6 +28,16 @@ const SIZES: Record<SizeName, Size> = {
     default: 991,
     max: 1200,
   },
+  xlarge: {
+    min: 1201,
+    default: 1440,
+    max: 1920,
+  },
+  xxlarge: {
+    min: 1921,
+    default: 2560,
+    max: 9999,
+  },
 };
 
 export const getMaxWidthQueryForSize = (size: SizeName, sizeValues = SIZES) =>
@@ -37,6 +47,8 @@ interface Breakpoints {
   xsmall?: number;
   small?: number;
   medium?: number;
+  xlarge?: number;
+  xxlarge?: number;
 }
 
 export const getSizesForBreakpoints = (breakpoints: Breakpoints) => {
@@ -46,7 +58,7 @@ export const getSizesForBreakpoints = (breakpoints: Breakpoints) => {
     return newSizes;
   }
 
-  const { xsmall, small, medium } = breakpoints;
+  const { xsmall, small, medium, xlarge, xxlarge } = breakpoints;
 
   if (xsmall) {
     const xsmallMin = Math.floor(xsmall / 2);
@@ -76,11 +88,31 @@ export const getSizesForBreakpoints = (breakpoints: Breakpoints) => {
   };
 
   const largeMin = newSizes.medium.max + 1;
+  const largeMax = xlarge ? xlarge : newSizes.large.max;
   newSizes.large = {
-    max: 2000, // TODO: decide upper limit
+    max: largeMax,
     min: largeMin,
     default: largeMin + 1,
   };
+
+  if (xlarge) {
+    const xlargeMin = newSizes.large.max + 1;
+    const xlargeMax = xxlarge ? xxlarge : newSizes.xlarge.max;
+    newSizes.xlarge = {
+      max: xlargeMax,
+      min: xlargeMin,
+      default: xlargeMin + 1,
+    };
+  }
+
+  if (xxlarge) {
+    const xxlargeMin = xlarge ? newSizes.xlarge.max + 1 : newSizes.large.max + 1;
+    newSizes.xxlarge = {
+      max: newSizes.xxlarge.max,
+      min: xxlargeMin,
+      default: xxlargeMin + 1,
+    };
+  }
 
   return newSizes;
 };
